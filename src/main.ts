@@ -1,24 +1,68 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter'
+function chunk<T>(array: T[], size: number) {
+  const chunked: T[][] = [];
+  let index = 0;
+  while (index < array.length) {
+    chunked.push(array.slice(index, size + index));
+    index += size;
+  }
+  return chunked;
+}
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+type Post = {
+  userId: number;
+  id: number;
+  title: string;
+  body: string;
+};
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+async function getPosts() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+  const data = await response.json();
+  return data as Post[];
+}
+
+function createPosts(posts: Post[]) {
+  const list = document.createElement('ul');
+  list.classList.add('posts');
+
+  for (const post of posts) {
+    const li = document.createElement('li');
+
+    const title = document.createElement('h2');
+    title.textContent = post.title;
+    li.appendChild(title);
+
+    const body = document.createElement('p');
+    body.textContent = post.body;
+    li.appendChild(body);
+
+    list.appendChild(li);
+  }
+
+  return list;
+}
+
+function* createPostIterator(chunkedPosts: Post[][]) {
+  for (const posts of chunkedPosts) {
+    yield createPosts(posts);
+  }
+}
+
+async function main() {
+  const container = document.querySelector('.container');
+  if (container) {
+    const posts = await getPosts();
+    const chunkIterator = createPostIterator(chunk(posts, 10));
+
+    const loadMore = document.querySelector('.load-more');
+    loadMore?.addEventListener('click', () => {
+      const { value, done } = chunkIterator.next();
+      if (!done) {
+        container.appendChild(value);
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    });
+  }
+}
+
+main();
