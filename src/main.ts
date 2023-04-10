@@ -25,21 +25,23 @@ function createPosts(posts: Post[]) {
   const list = document.createElement('ul');
   list.classList.add('posts');
 
-  for (const post of posts) {
-    const li = document.createElement('li');
-
-    const title = document.createElement('h2');
-    title.textContent = post.title;
-    li.appendChild(title);
-
-    const body = document.createElement('p');
-    body.textContent = post.body;
-    li.appendChild(body);
-
-    list.appendChild(li);
-  }
+  list.append(
+    ...posts.map(post => {
+      const li = document.createElement('li');
+      li.classList.add('post');
+      li.appendChild(createTextNode('h2', post.title));
+      li.appendChild(createTextNode('p', post.body));
+      return li;
+    })
+  );
 
   return list;
+}
+
+function createTextNode(tagName: string, text: string) {
+  const element = document.createElement(tagName);
+  element.textContent = text;
+  return element;
 }
 
 function* createPostIterator(chunkedPosts: Post[][]) {
