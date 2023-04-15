@@ -16,26 +16,32 @@ type Post = {
 };
 
 async function getPosts() {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-  const data = await response.json();
-  return data as Post[];
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    const data = await response.json();
+    return data as Post[];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }
 
-function createPosts(posts: Post[]) {
+function* createPosts(posts: Post[]) {
   const list = document.createElement('ul');
   list.classList.add('posts');
 
-  list.append(
-    ...posts.map(post => {
-      const li = document.createElement('li');
-      li.classList.add('post');
-      li.appendChild(createTextNode('h2', post.title));
-      li.appendChild(createTextNode('p', post.body));
-      return li;
-    })
-  );
+  for (const post of posts) {
+    const li = document.createElement('li');
+    li.classList.add('post');
+    li.appendChild(createTextNode('h2', post.title));
+    li.appendChild(createTextNode('p', post.body));
+    list.appendChild(li);
+  }
 
-  return list;
+  yield list;
 }
 
 function createTextNode(tagName: string, text: string) {
@@ -46,25 +52,27 @@ function createTextNode(tagName: string, text: string) {
 
 function* createPostIterator(chunkedPosts: Post[][]) {
   for (const posts of chunkedPosts) {
-    yield createPosts(posts);
+    yield* createPosts(posts);
   }
 }
 
 async function main() {
   const container = document.querySelector('.container');
-  if (container) {
-    const posts = await getPosts();
-    const chunkIterator = createPostIterator(chunk(posts, 10));
-
-    const loadMore = document.querySelector('.load-more');
-    loadMore?.addEventListener('click', () => {
-      const { value, done } = chunkIterator.next();
-      if (!done) {
-        container.appendChild(value);
-        window.scrollTo(0, document.body.scrollHeight);
-      }
-    });
+  const loadMore = document.querySelector('.load-more');
+  if (!container || !loadMore) {
+    return;
   }
+
+  const posts = await getPosts();
+  const chunkIterator = createPostIterator(chunk(posts, 10));
+
+  loadMore.addEventListener('click', () => {
+    const { value, done } = chunkIterator.next();
+    if (!done) {
+      container.appendChild(value);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+  });
 }
 
 main();
