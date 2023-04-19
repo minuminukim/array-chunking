@@ -29,7 +29,7 @@ async function getPosts() {
   }
 }
 
-function* createPosts(posts: Post[]) {
+function createPosts(posts: Post[]) {
   const list = document.createElement('ul');
   list.classList.add('posts');
 
@@ -41,7 +41,7 @@ function* createPosts(posts: Post[]) {
     list.appendChild(li);
   }
 
-  yield list;
+  return list;
 }
 
 function createTextNode(tagName: string, text: string) {
@@ -52,7 +52,7 @@ function createTextNode(tagName: string, text: string) {
 
 function* createPostIterator(chunkedPosts: Post[][]) {
   for (const posts of chunkedPosts) {
-    yield* createPosts(posts);
+    yield createPosts(posts);
   }
 }
 
